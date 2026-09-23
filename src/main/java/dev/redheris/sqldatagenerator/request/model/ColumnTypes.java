@@ -13,10 +13,6 @@ public enum ColumnTypes {
     DOUBLE,
     @SerializedName(value = "integer", alternate = "int")
     INTEGER,
-    @SerializedName("decimal")
-    DECIMAL,
-    @SerializedName("real")
-    REAL,
     @SerializedName("date")
     DATE,
     @SerializedName("time")
