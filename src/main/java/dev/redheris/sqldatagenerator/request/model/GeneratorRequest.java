@@ -15,21 +15,25 @@ public record GeneratorRequest(
         @SerializedName("tables")
         TableConfig[] tables
 ) {
-    public void validate() {
+    public void validate() throws RequestValidationException {
         try {
-            dbAuth.validate();
-        } catch (Exception e) {
-            throw new IllegalStateException("Validation failed for \"db_auth\": " + e.getMessage(), e);
-        }
-
-        Objects.requireNonNull(tables, "'tables' field is required");
-
-        for (int i = 0; i < tables.length; i++) {
             try {
-                tables[i].validate();
+                dbAuth.validate();
             } catch (Exception e) {
-                throw new IllegalStateException("Validation failed for \"tables[%d]\": ".formatted(i) + e.getMessage(), e);
+                throw new IllegalStateException("Validation failed for \"db_auth\": " + e.getMessage(), e);
             }
+
+            Objects.requireNonNull(tables, "'tables' field is required");
+
+            for (int i = 0; i < tables.length; i++) {
+                try {
+                    tables[i].validate();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Validation failed for \"tables[%d]\": ".formatted(i) + e.getMessage(), e);
+                }
+            }
+        } catch (Exception e) {
+            throw new RequestValidationException(e);
         }
     }
 }

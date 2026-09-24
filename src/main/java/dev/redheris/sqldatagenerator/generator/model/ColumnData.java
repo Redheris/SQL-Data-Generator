@@ -1,4 +1,6 @@
-package dev.redheris.sqldatagenerator.db;
+package dev.redheris.sqldatagenerator.generator.model;
+
+import dev.redheris.sqldatagenerator.db.TableDataInsertService;
 
 /**
  * Contains a single column data with a set of values

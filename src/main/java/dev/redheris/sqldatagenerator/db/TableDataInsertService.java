@@ -1,5 +1,6 @@
 package dev.redheris.sqldatagenerator.db;
 
+import dev.redheris.sqldatagenerator.generator.model.ColumnData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
