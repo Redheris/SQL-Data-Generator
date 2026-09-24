@@ -7,12 +7,11 @@ import dev.redheris.sqldatagenerator.db.TableDataInsertService;
  *
  * @param name  Column's name
  * @param value Column's values
- * @param <T>   Type of the column's values
  *
  * @see TableDataInsertService
  */
-public record ColumnData<T>(
+public record ColumnData(
         String name,
-        T[] value
+        Object[] value
 ) {
 }

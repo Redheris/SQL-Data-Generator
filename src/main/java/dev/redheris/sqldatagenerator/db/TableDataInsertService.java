@@ -29,7 +29,7 @@ public class TableDataInsertService {
      * @param generatedKeyColumns Names of the columns that has database-generated values, so the program can skip them
      * @param columns             Data for each column with a specified column name and values
      */
-    public void insertValues(String table, String[] generatedKeyColumns, ColumnData<Object>[] columns) {
+    public void insertValues(String table, String[] generatedKeyColumns, ColumnData[] columns) {
         int valuesCount = columns[0].value().length;
         log.info("Inserting {} records into \"{}\"...", valuesCount, table);
         long startTime = System.currentTimeMillis();
@@ -53,13 +53,13 @@ public class TableDataInsertService {
      * of the record
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object>[] columnsDataToBatches(ColumnData<Object>[] columnsData) {
+    private Map<String, Object>[] columnsDataToBatches(ColumnData[] columnsData) {
         int valuesCount = columnsData[0].value().length;
         Map<String, Object>[] batches = new HashMap[valuesCount];
 
         for (int i = 0; i < valuesCount; i++) {
             batches[i] = new HashMap<>();
-            for (ColumnData<Object> column : columnsData) {
+            for (ColumnData column : columnsData) {
                 batches[i].put(column.name(), column.value()[i]);
             }
         }

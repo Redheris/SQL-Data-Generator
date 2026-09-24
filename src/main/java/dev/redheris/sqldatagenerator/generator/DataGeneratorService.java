@@ -43,7 +43,7 @@ public class DataGeneratorService {
                 .builder(tableConfig.name(), tableConfig.generatedKeyColumns());
 
         for (ColumnConfig column : tableConfig.columns()) {
-            ColumnData<Object> columnData = generateColumnData(tableConfig.count(), column);
+            ColumnData columnData = generateColumnData(tableConfig.count(), column);
             tableBuilder.addColumnData(columnData);
         }
 
@@ -54,7 +54,7 @@ public class DataGeneratorService {
         return tableBuilder.build();
     }
 
-    public ColumnData<Object> generateColumnData(int count, ColumnConfig columnConfig) {
+    public ColumnData generateColumnData(int count, ColumnConfig columnConfig) {
         Object[] data = new Object[count];
 
         switch (columnConfig.type()) {
@@ -67,7 +67,7 @@ public class DataGeneratorService {
             case DATETIME -> generateDateTimeData(data, columnConfig);
         }
 
-        return new ColumnData<>(columnConfig.name(), data);
+        return new ColumnData(columnConfig.name(), data);
     }
 
     private void generateStringData(Object[] data, ColumnConfig columnConfig) {
