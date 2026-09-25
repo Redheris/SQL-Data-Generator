@@ -20,7 +20,7 @@ public final class ColumnConfig {
     private boolean unique = false;
     @SerializedName("null")
     private double nullOccurrence = 0.0;
-    @SerializedName("plain_value")
+    @SerializedName("is_plain_value")
     private boolean plainValue = false;
     @SerializedName("value")
     private String value;

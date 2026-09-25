@@ -3,6 +3,7 @@ package dev.redheris.sqldatagenerator.request;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dev.redheris.sqldatagenerator.generator.DataGeneratorService;
+import dev.redheris.sqldatagenerator.generator.StringGeneratorService;
 import dev.redheris.sqldatagenerator.generator.model.GeneratedTableData;
 import dev.redheris.sqldatagenerator.request.model.GeneratorRequest;
 import dev.redheris.sqldatagenerator.request.model.RequestValidationException;
@@ -19,14 +20,16 @@ import java.util.List;
 @Service
 public class RequestService {
     private final DataGeneratorService dataGeneratorService;
+    private final StringGeneratorService stringGeneratorService;
     @Value("${generator.request_file}")
     private String requestFile;
 
     private static final Logger log = LoggerFactory.getLogger(RequestService.class);
     private final static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    public RequestService(DataGeneratorService dataGeneratorService) {
+    public RequestService(DataGeneratorService dataGeneratorService, StringGeneratorService stringGeneratorService) {
         this.dataGeneratorService = dataGeneratorService;
+        this.stringGeneratorService = stringGeneratorService;
     }
 
     @EventListener
@@ -34,8 +37,16 @@ public class RequestService {
         GeneratorRequest request = getRequestFromFile(requestFile);
         try {
             request.validate();
-            List<GeneratedTableData> generatedTables = dataGeneratorService.generateDataByRequest(request);
-            System.out.println("***");
+            String pattern = """
+                    name: <full_name>
+                    phone: <phone>
+                    email: <email>
+                    grade: D{{2,4}}.DD
+                    string: [RD_E]{10}
+                    """;
+            System.out.println(stringGeneratorService.generateByPattern(request, pattern, true));
+            List<GeneratedTableData> tables = dataGeneratorService.generateDataByRequest(request);
+            System.out.println("*** ");
         } catch (RequestValidationException e) {
             log.info("Request validation failed:", e);
         } catch (Exception e) {

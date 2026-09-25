@@ -18,6 +18,11 @@ import java.util.concurrent.ThreadLocalRandom;
 public class DataGeneratorService {
     private static final Logger log = LoggerFactory.getLogger(DataGeneratorService.class);
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
+    private final StringGeneratorService stringGeneratorService;
+
+    public DataGeneratorService(StringGeneratorService stringGeneratorService) {
+        this.stringGeneratorService = stringGeneratorService;
+    }
 
     public List<GeneratedTableData> generateDataByRequest(GeneratorRequest request) {
         log.info("Generating data for {} tables...", request.tables().length);
@@ -26,7 +31,7 @@ public class DataGeneratorService {
         List<GeneratedTableData> generatedTables = new ArrayList<>();
 
         for (TableConfig table : request.tables()) {
-            generatedTables.add(generateTableData(table));
+            generatedTables.add(generateTableData(request, table));
         }
 
         double time = (System.currentTimeMillis() - startTime) / 1000.0;
@@ -35,7 +40,7 @@ public class DataGeneratorService {
         return generatedTables;
     }
 
-    private GeneratedTableData generateTableData(TableConfig tableConfig) {
+    private GeneratedTableData generateTableData(GeneratorRequest request, TableConfig tableConfig) {
         log.info("Generating {} records for table \"{}\"...", tableConfig.count(), tableConfig.name());
         long startTime = System.currentTimeMillis();
 
@@ -43,7 +48,7 @@ public class DataGeneratorService {
                 .builder(tableConfig.name(), tableConfig.generatedKeyColumns());
 
         for (ColumnConfig column : tableConfig.columns()) {
-            ColumnData columnData = generateColumnData(tableConfig.count(), column);
+            ColumnData columnData = generateColumnData(request, tableConfig.count(), column);
             tableBuilder.addColumnData(columnData);
         }
 
@@ -54,11 +59,13 @@ public class DataGeneratorService {
         return tableBuilder.build();
     }
 
-    public ColumnData generateColumnData(int count, ColumnConfig columnConfig) {
+    public ColumnData generateColumnData(GeneratorRequest request, int count, ColumnConfig columnConfig) {
         Object[] data = new Object[count];
 
+        // TODO: Unique values generation
+        // TODO: Foreign keys generation
         switch (columnConfig.type()) {
-            case STRING -> generateStringData(data, columnConfig);
+            case STRING -> generateStringData(request, data, columnConfig);
             case BIGINT -> generateLongData(data, columnConfig);
             case INTEGER -> generateIntegerData(data, columnConfig);
             case DOUBLE -> generateDoubleData(data, columnConfig);
@@ -70,15 +77,14 @@ public class DataGeneratorService {
         return new ColumnData(columnConfig.name(), data);
     }
 
-    private void generateStringData(Object[] data, ColumnConfig columnConfig) {
+    private void generateStringData(GeneratorRequest request, Object[] data, ColumnConfig columnConfig) {
         StringGenerationConfig config = StringGenerationConfig.fromColumnConfig(columnConfig);
 
         for (int i = 0; i < data.length; i++) {
             if (config.nullOccurrence() > 0 && random.nextDouble() < config.nullOccurrence()) {
                 data[i] = null;
             } else {
-                // TODO: pattern syntax decoder and string generator
-                data[i] = "Imagine this is a random string";
+                data[i] = stringGeneratorService.generateByPattern(request, config.pattern(), config.plainValue());
             }
         }
     }
