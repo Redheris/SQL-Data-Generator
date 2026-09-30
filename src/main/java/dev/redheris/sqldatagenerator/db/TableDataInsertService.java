@@ -3,7 +3,6 @@ package dev.redheris.sqldatagenerator.db;
 import dev.redheris.sqldatagenerator.generator.model.ColumnData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +15,10 @@ import java.util.Map;
 @Service
 public class TableDataInsertService {
     private static final Logger log = LoggerFactory.getLogger(TableDataInsertService.class);
-    private final JdbcTemplate jdbcTemplate;
+    private final ConnectionService connectionService;
 
-    public TableDataInsertService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public TableDataInsertService(ConnectionService connectionService) {
+        this.connectionService = connectionService;
     }
 
     /**
@@ -36,6 +35,7 @@ public class TableDataInsertService {
 
         var valuesMap = columnsDataToBatches(columns);
         try {
+            var jdbcTemplate = connectionService.getJdbcTemplate();
             new SimpleJdbcInsert(jdbcTemplate)
                     .withTableName(table)
                     .usingGeneratedKeyColumns(generatedKeyColumns)
