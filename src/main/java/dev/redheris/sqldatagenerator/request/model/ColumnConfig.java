@@ -30,16 +30,30 @@ public final class ColumnConfig {
     private double trueOccurrence = 0.5;
     @SerializedName("after")
     @JsonAdapter(LocalDateAdapter.class)
-    private LocalDate dateAfter;
+    private LocalDate dateAfter = LocalDate.of(1970, 1, 1);
     @SerializedName("before")
     @JsonAdapter(LocalDateAdapter.class)
-    private LocalDate dateBefore;
+    private LocalDate dateBefore = LocalDate.of(2100, 12, 31);
     @SerializedName("foreign_key")
     private ForeignKeyPointer foreignKey;
 
     public void validate() {
         Objects.requireNonNull(name, "'name' field is required");
+
+        if (foreignKey != null) {
+            try {
+                foreignKey.validate();
+            } catch (Exception e) {
+                throw new IllegalStateException("Validation failed for \"foreign_key\": " + e.getMessage(), e);
+            }
+            if (type != null) {
+                throw new IllegalStateException("Foreign key column's type are pulled from 'foreign_key' field");
+            }
+            return;
+        }
+
         Objects.requireNonNull(type, "'type' field is required");
+
         if (nullOccurrence < 0.0 || nullOccurrence > 1.0) {
             throw new IllegalArgumentException("'null' must be in range [0.0, 1.0]");
         }
@@ -48,15 +62,9 @@ public final class ColumnConfig {
             Objects.requireNonNull(value, "'value' field is required for String column");
         }
 
-        if (type == ColumnTypes.DOUBLE) {
+        if (type == ColumnTypes.DOUBLE || type == ColumnTypes.INTEGER) {
             Objects.requireNonNull(minValue, "'min_value' field is required for numeric column");
             Objects.requireNonNull(maxValue, "'max_value' field is required for numeric column");
-        }
-
-        if (type == ColumnTypes.INTEGER) {
-            Objects.requireNonNull(minValue, "'min_value' field is required for numeric column");
-            Objects.requireNonNull(maxValue, "'max_value' field is required for numeric column");
-
         }
 
         if (minValue != null) {
@@ -65,14 +73,6 @@ public final class ColumnConfig {
             }
             if (maxValue != null && maxValue < minValue) {
                 throw new IllegalArgumentException("'max_value' must be >= 'min_value'");
-            }
-        }
-
-        if (foreignKey != null) {
-            try {
-                foreignKey.validate();
-            } catch (Exception e) {
-                throw new IllegalStateException("Validation failed for \"foreign_key\": " + e.getMessage(), e);
             }
         }
     }
