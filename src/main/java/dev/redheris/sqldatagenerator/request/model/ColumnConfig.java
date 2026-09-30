@@ -1,6 +1,8 @@
 package dev.redheris.sqldatagenerator.request.model;
 
+import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
+import dev.redheris.sqldatagenerator.gson.adapter.LocalDateAdapter;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -27,8 +29,10 @@ public final class ColumnConfig {
     @SerializedName("boolean_true")
     private double trueOccurrence = 0.5;
     @SerializedName("after")
+    @JsonAdapter(LocalDateAdapter.class)
     private LocalDate dateAfter;
     @SerializedName("before")
+    @JsonAdapter(LocalDateAdapter.class)
     private LocalDate dateBefore;
     @SerializedName("foreign_key")
     private ForeignKeyPointer foreignKey;
@@ -53,10 +57,6 @@ public final class ColumnConfig {
             Objects.requireNonNull(minValue, "'min_value' field is required for numeric column");
             Objects.requireNonNull(maxValue, "'max_value' field is required for numeric column");
 
-        }
-
-        if (type == ColumnTypes.DATE || type == ColumnTypes.DATETIME) {
-            Objects.requireNonNull(value, "'value' field is required for given column type");
         }
 
         if (minValue != null) {
