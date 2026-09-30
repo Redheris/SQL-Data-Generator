@@ -1,7 +1,9 @@
 package dev.redheris.sqldatagenerator.generator;
 
+import dev.redheris.sqldatagenerator.db.ColumnDataExtractService;
 import dev.redheris.sqldatagenerator.generator.model.*;
 import dev.redheris.sqldatagenerator.request.model.ColumnConfig;
+import dev.redheris.sqldatagenerator.request.model.ForeignKeyPointer;
 import dev.redheris.sqldatagenerator.request.model.GeneratorRequest;
 import dev.redheris.sqldatagenerator.request.model.TableConfig;
 import org.slf4j.Logger;
@@ -19,9 +21,11 @@ public class DataGeneratorService {
     private static final Logger log = LoggerFactory.getLogger(DataGeneratorService.class);
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
     private final StringGeneratorService stringGeneratorService;
+    private final ColumnDataExtractService columnDataExtractService;
 
-    public DataGeneratorService(StringGeneratorService stringGeneratorService) {
+    public DataGeneratorService(StringGeneratorService stringGeneratorService, ColumnDataExtractService columnDataExtractService) {
         this.stringGeneratorService = stringGeneratorService;
+        this.columnDataExtractService = columnDataExtractService;
     }
 
     public List<GeneratedTableData> generateDataByRequest(GeneratorRequest request) {
@@ -63,15 +67,23 @@ public class DataGeneratorService {
         Object[] data = new Object[count];
 
         // TODO: Unique values generation
-        // TODO: Foreign keys generation
-        switch (columnConfig.type()) {
-            case STRING -> generateStringData(request, data, columnConfig);
-            case BIGINT -> generateLongData(data, columnConfig);
-            case INTEGER -> generateIntegerData(data, columnConfig);
-            case DOUBLE -> generateDoubleData(data, columnConfig);
-            case BOOLEAN -> generateBooleanData(data, columnConfig);
-            case DATE -> generateDateData(data, columnConfig);
-            case DATETIME -> generateDateTimeData(data, columnConfig);
+        if (columnConfig.foreignKey() != null) {
+            ForeignKeyPointer fk = columnConfig.foreignKey();
+            List<Object> keys = columnDataExtractService.selectColumn(fk.table(), fk.column());
+
+            for (int i = 0; i < count; i++) {
+                data[i] = keys.get(random.nextInt(keys.size()));
+            }
+        } else {
+            switch (columnConfig.type()) {
+                case STRING -> generateStringData(request, data, columnConfig);
+                case BIGINT -> generateLongData(data, columnConfig);
+                case INTEGER -> generateIntegerData(data, columnConfig);
+                case DOUBLE -> generateDoubleData(data, columnConfig);
+                case BOOLEAN -> generateBooleanData(data, columnConfig);
+                case DATE -> generateDateData(data, columnConfig);
+                case DATETIME -> generateDateTimeData(data, columnConfig);
+            }
         }
 
         return new ColumnData(columnConfig.name(), data);
