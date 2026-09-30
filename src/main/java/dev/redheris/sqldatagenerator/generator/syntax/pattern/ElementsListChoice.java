@@ -26,7 +26,7 @@ public class ElementsListChoice extends AbstractStretchableElement implements St
         return elements[index].generateValue(random);
     }
 
-    public PatternElement getElement(Random random) {
+    public PatternElement randomElement(Random random) {
         int index = random.nextInt(elements.length);
         return elements[index];
     }

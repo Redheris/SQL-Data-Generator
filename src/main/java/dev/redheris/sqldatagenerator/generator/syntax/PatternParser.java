@@ -12,14 +12,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class PatternParser {
-    public List<PatternElement> parsePatternString(
+    public Pattern parsePatternString(
             Random random,
             Map<String, String[]> placeholdersRaw,
             Map<String, String> models,
             String valueGenPattern,
             boolean plainByDefault
     ) {
-        List<PatternElement> elements = new ArrayList<>();
+        Pattern pattern = new Pattern();
 
         Map<String, ElementsListChoice> placeholders = convertPlaceholders(placeholdersRaw);
         AtomicInteger index = new AtomicInteger(0);
@@ -32,7 +32,7 @@ public class PatternParser {
         }
 
         while (index.get() < valueGenPattern.length()) {
-            elements.add(parseElement(
+            pattern.addElement(parseElement(
                     random,
                     placeholders,
                     valueGenPattern,
@@ -42,7 +42,7 @@ public class PatternParser {
             ));
         }
 
-        return elements;
+        return pattern;
     }
 
     private Map<String, ElementsListChoice> convertPlaceholders(Map<String, String[]> placeholdersRaw) {
@@ -51,6 +51,29 @@ public class PatternParser {
                         Map.Entry::getKey,
                         entry -> new ElementsListChoice(entry.getValue())
                 ));
+    }
+
+    private Pattern parsePatternSubstring(
+            Random random,
+            Map<String, ElementsListChoice> placeholders,
+            String substring,
+            boolean plainByDefault
+    ) {
+        Pattern pattern = new Pattern();
+        AtomicInteger index = new AtomicInteger(0);
+
+        while (index.get() < substring.length()) {
+            pattern.addElement(parseElement(
+                    random,
+                    placeholders,
+                    substring,
+                    index,
+                    false,
+                    plainByDefault
+            ));
+        }
+
+        return pattern;
     }
 
     private PatternElement parseElement(
@@ -65,8 +88,6 @@ public class PatternParser {
             return new PlainTextElement(string.charAt(index.getAndIncrement()));
         }
 
-        // TODO: "(...)" wrapper binding a list of elements to use in "[...]"
-
         char ch = string.charAt(index.getAndIncrement());
         PatternElement element = switch (ch) {
             case '\\' -> parseElement(random, placeholders, string, index, true, plainByDefault);
@@ -75,20 +96,20 @@ public class PatternParser {
             case 'E' -> new EnglishLetter();
             case 'R' -> new RussianLetter();
             case 'D' -> new NumberValueElement();
+            case '(' -> {
+                String content = extractWrapperContent(string, index, "(", ")");
+                index.addAndGet(content.length() + 1);
+                yield parsePatternSubstring(random, placeholders, content, plainByDefault);
+            }
             case '%' -> {
-                int endIndex = string.indexOf('%', index.get());
-                if (endIndex == -1) {
-                    throw new IllegalArgumentException("Unclosed '%...%' placeholder ");
-                }
-
-                String content = string.substring(index.get(), endIndex);
+                String content = extractWrapperContent(string, index, "%", "%");
                 index.addAndGet(content.length() + 1);
 
                 if (!placeholders.containsKey(content)) {
                     throw new IllegalArgumentException("Unknown placeholder: %%%s%%".formatted(content));
                 }
 
-                yield placeholders.get(content).getElement(random);
+                yield placeholders.get(content).randomElement(random);
             }
             case '[' -> parseElementsList(random, placeholders, string, index, plainByDefault);
             case '{' -> throw new IllegalArgumentException(
@@ -102,29 +123,22 @@ public class PatternParser {
 
         char suffix = string.charAt(index.get());
         if (suffix == '{') {
-            int endIndex;
             if (string.charAt(index.get() + 1) == '{') {
-                endIndex = string.indexOf("}}", index.get());
-                if (endIndex == -1) {
-                    throw new IllegalArgumentException("Unclosed '{{...}}' suffix");
-                }
-                String rangeString = string.substring(index.get() + 2, endIndex);
+                index.addAndGet(2);
+                String rangeString = extractWrapperContent(string, index, "{{", "}}");
 
                 Range range = parseRange(rangeString, false);
                 ((HasRange) element).setRange(range.min, range.max);
 
-                index.addAndGet(rangeString.length() + 4);
+                index.addAndGet(rangeString.length() + 2);
             } else {
-                endIndex = string.indexOf("}", index.get());
-                if (endIndex == -1) {
-                    throw new IllegalArgumentException("Unclosed '{...}' suffix");
-                }
-                String rangeString = string.substring(index.get() + 1, endIndex);
+                index.addAndGet(1);
+                String rangeString = extractWrapperContent(string, index, "{", "}");
 
                 Range range = parseRange(rangeString, true);
                 ((Stretchable) element).setLength(range.min, range.max);
 
-                index.addAndGet(rangeString.length() + 2);
+                index.addAndGet(rangeString.length() + 1);
             }
         }
 
@@ -138,12 +152,7 @@ public class PatternParser {
             AtomicInteger index,
             boolean plainByDefault
     ) {
-        int endIndex = string.indexOf("]", index.get());
-        if (endIndex == -1) {
-            throw new IllegalArgumentException("Unclosed '[...]' elements list");
-        }
-
-        String content = string.substring(index.get(), endIndex);
+        String content = extractWrapperContent(string, index, "[", "]");
 
         List<PatternElement> elements = new ArrayList<>();
         AtomicInteger subindex = new AtomicInteger(0);
@@ -178,6 +187,14 @@ public class PatternParser {
             throw new IllegalArgumentException("Range must have exactly 1 or 2 arguments");
         }
         throw new IllegalArgumentException("Range must have exactly 2 arguments");
+    }
+
+    private String extractWrapperContent(String string, AtomicInteger index, String opening, String ending) {
+        int endIndex = string.indexOf(ending, index.get());
+        if (endIndex == -1) {
+            throw new IllegalArgumentException("Unclosed '%s...%s' structure".formatted(opening, ending));
+        }
+        return string.substring(index.get(), endIndex);
     }
 
 
