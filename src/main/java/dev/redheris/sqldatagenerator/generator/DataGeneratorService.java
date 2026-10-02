@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -22,10 +21,12 @@ public class DataGeneratorService {
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
     private final StringGeneratorService stringGeneratorService;
     private final ColumnDataExtractService columnDataExtractService;
+    private final TablePrioritizer tablePrioritizer;
 
-    public DataGeneratorService(StringGeneratorService stringGeneratorService, ColumnDataExtractService columnDataExtractService) {
+    public DataGeneratorService(StringGeneratorService stringGeneratorService, ColumnDataExtractService columnDataExtractService, TablePrioritizer tablePrioritizer) {
         this.stringGeneratorService = stringGeneratorService;
         this.columnDataExtractService = columnDataExtractService;
+        this.tablePrioritizer = tablePrioritizer;
     }
 
     public List<GeneratedTableData> generateDataByRequest(GeneratorRequest request) {
@@ -34,12 +35,14 @@ public class DataGeneratorService {
 
         List<GeneratedTableData> generatedTables = new ArrayList<>();
 
-        for (TableConfig table : request.tables()) {
+        List<TableConfig> prioritizedTables = tablePrioritizer.prioritizeTables(request.tables());
+
+        for (TableConfig table : prioritizedTables) {
             generatedTables.add(generateTableData(request, table));
         }
 
         double time = (System.currentTimeMillis() - startTime) / 1000.0;
-        log.info("Completed generation data for {} in {} seconds", request.tables().length, time);
+        log.info("Completed generation data for {} in {} seconds", prioritizedTables.size(), time);
 
         return generatedTables;
     }
