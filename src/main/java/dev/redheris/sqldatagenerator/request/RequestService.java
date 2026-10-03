@@ -1,13 +1,10 @@
 package dev.redheris.sqldatagenerator.request;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import dev.redheris.sqldatagenerator.db.ConnectionService;
-import dev.redheris.sqldatagenerator.db.TableDataInsertService;
 import dev.redheris.sqldatagenerator.generator.DataGeneratorService;
 import dev.redheris.sqldatagenerator.generator.StringGenerator;
 import dev.redheris.sqldatagenerator.generator.model.GeneratedTableData;
-import dev.redheris.sqldatagenerator.gson.adapter.LocalDateAdapter;
 import dev.redheris.sqldatagenerator.request.model.GeneratorRequest;
 import dev.redheris.sqldatagenerator.request.model.RequestValidationException;
 import org.slf4j.Logger;
@@ -18,30 +15,28 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.io.FileReader;
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class RequestService {
     private static final Logger log = LoggerFactory.getLogger(RequestService.class);
-    private final static Gson gson = new GsonBuilder().setPrettyPrinting()
-            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter()).create();
 
+    private final Gson gson;
     private final DataGeneratorService dataGeneratorService;
     private final StringGenerator stringGeneratorService;
     private final ConnectionService connectionService;
-    private final TableDataInsertService tableDataInsertService;
 
     @Value("${generator.request_file}")
     private String requestFile;
 
-    public RequestService(DataGeneratorService dataGeneratorService, StringGenerator stringGeneratorService,
-                          ConnectionService connectionService, TableDataInsertService tableDataInsertService
-    ) {
+    public RequestService(Gson gson,
+                          DataGeneratorService dataGeneratorService,
+                          StringGenerator stringGeneratorService,
+                          ConnectionService connectionService) {
         this.dataGeneratorService = dataGeneratorService;
         this.stringGeneratorService = stringGeneratorService;
         this.connectionService = connectionService;
-        this.tableDataInsertService = tableDataInsertService;
+        this.gson = gson;
     }
 
     @EventListener
@@ -70,7 +65,7 @@ public class RequestService {
                     grade: D{{2,4}}.DD
                     string: [RD_E]{10}
                     """;
-            System.out.println(stringGeneratorService.generateByPattern(request, pattern, true));
+            System.out.println(stringGeneratorService.generateByPattern(request, pattern, false));
             List<GeneratedTableData> tables = dataGeneratorService.generateDataByRequest(request);
             System.out.println("*** ");
         } catch (Exception e) {

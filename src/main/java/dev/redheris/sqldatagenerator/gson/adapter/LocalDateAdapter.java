@@ -3,12 +3,14 @@ package dev.redheris.sqldatagenerator.gson.adapter;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+@Component
 public class LocalDateAdapter extends TypeAdapter<LocalDate> {
     private final static DateTimeFormatter DEFAULT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final static DateTimeFormatter DATE_FORMAT_2 = DateTimeFormatter.ofPattern("dd-MM-yyyy");
