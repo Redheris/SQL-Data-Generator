@@ -1,6 +1,6 @@
 package dev.redheris.sqldatagenerator.generator;
 
-import dev.redheris.sqldatagenerator.db.ColumnDataExtractService;
+import dev.redheris.sqldatagenerator.db.ColumnDataExtractor;
 import dev.redheris.sqldatagenerator.generator.model.*;
 import dev.redheris.sqldatagenerator.request.model.ColumnConfig;
 import dev.redheris.sqldatagenerator.request.model.ForeignKeyPointer;
@@ -19,13 +19,13 @@ import java.util.concurrent.ThreadLocalRandom;
 public class DataGeneratorService {
     private static final Logger log = LoggerFactory.getLogger(DataGeneratorService.class);
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
-    private final StringGeneratorService stringGeneratorService;
-    private final ColumnDataExtractService columnDataExtractService;
+    private final StringGenerator stringGenerator;
+    private final ColumnDataExtractor columnDataExtractor;
     private final TablePrioritizer tablePrioritizer;
 
-    public DataGeneratorService(StringGeneratorService stringGeneratorService, ColumnDataExtractService columnDataExtractService, TablePrioritizer tablePrioritizer) {
-        this.stringGeneratorService = stringGeneratorService;
-        this.columnDataExtractService = columnDataExtractService;
+    public DataGeneratorService(StringGenerator stringGenerator, ColumnDataExtractor columnDataExtractor, TablePrioritizer tablePrioritizer) {
+        this.stringGenerator = stringGenerator;
+        this.columnDataExtractor = columnDataExtractor;
         this.tablePrioritizer = tablePrioritizer;
     }
 
@@ -72,7 +72,7 @@ public class DataGeneratorService {
         // TODO: Unique values generation
         if (columnConfig.foreignKey() != null) {
             ForeignKeyPointer fk = columnConfig.foreignKey();
-            List<Object> keys = columnDataExtractService.selectColumn(fk.table(), fk.column());
+            List<Object> keys = columnDataExtractor.selectColumn(fk.table(), fk.column());
 
             for (int i = 0; i < count; i++) {
                 data[i] = keys.get(random.nextInt(keys.size()));
@@ -99,7 +99,7 @@ public class DataGeneratorService {
             if (config.nullOccurrence() > 0 && random.nextDouble() < config.nullOccurrence()) {
                 data[i] = null;
             } else {
-                data[i] = stringGeneratorService.generateByPattern(request, config.pattern(), config.plainValue());
+                data[i] = stringGenerator.generateByPattern(request, config.pattern(), config.plainValue());
             }
         }
     }

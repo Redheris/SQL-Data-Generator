@@ -1,7 +1,7 @@
 package dev.redheris.sqldatagenerator.generator.syntax;
 
 import dev.redheris.sqldatagenerator.generator.syntax.pattern.*;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@Service
+@Component
 public class PatternParser {
     public Pattern parsePatternString(
             Random random,

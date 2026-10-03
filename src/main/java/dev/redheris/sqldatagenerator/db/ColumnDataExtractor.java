@@ -1,14 +1,14 @@
 package dev.redheris.sqldatagenerator.db;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Service
-public class ColumnDataExtractService {
+@Component
+public class ColumnDataExtractor {
     private final ConnectionService connectionService;
 
-    public ColumnDataExtractService(ConnectionService connectionService) {
+    public ColumnDataExtractor(ConnectionService connectionService) {
         this.connectionService = connectionService;
     }
 

@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 import dev.redheris.sqldatagenerator.db.ConnectionService;
 import dev.redheris.sqldatagenerator.db.TableDataInsertService;
 import dev.redheris.sqldatagenerator.generator.DataGeneratorService;
-import dev.redheris.sqldatagenerator.generator.StringGeneratorService;
+import dev.redheris.sqldatagenerator.generator.StringGenerator;
 import dev.redheris.sqldatagenerator.generator.model.GeneratedTableData;
 import dev.redheris.sqldatagenerator.gson.adapter.LocalDateAdapter;
 import dev.redheris.sqldatagenerator.request.model.GeneratorRequest;
@@ -28,14 +28,14 @@ public class RequestService {
             .registerTypeAdapter(LocalDate.class, new LocalDateAdapter()).create();
 
     private final DataGeneratorService dataGeneratorService;
-    private final StringGeneratorService stringGeneratorService;
+    private final StringGenerator stringGeneratorService;
     private final ConnectionService connectionService;
     private final TableDataInsertService tableDataInsertService;
 
     @Value("${generator.request_file}")
     private String requestFile;
 
-    public RequestService(DataGeneratorService dataGeneratorService, StringGeneratorService stringGeneratorService,
+    public RequestService(DataGeneratorService dataGeneratorService, StringGenerator stringGeneratorService,
                           ConnectionService connectionService, TableDataInsertService tableDataInsertService
     ) {
         this.dataGeneratorService = dataGeneratorService;

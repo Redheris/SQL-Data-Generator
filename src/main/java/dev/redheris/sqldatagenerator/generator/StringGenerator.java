@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 import java.util.Random;
 
 @Service
-public class StringGeneratorService {
+public class StringGenerator {
     private final PatternParser patternParser;
 
-    public StringGeneratorService(PatternParser patternParser) {
+    public StringGenerator(PatternParser patternParser) {
         this.patternParser = patternParser;
     }
 
