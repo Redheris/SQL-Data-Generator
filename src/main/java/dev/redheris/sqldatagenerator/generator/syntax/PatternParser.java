@@ -6,14 +6,12 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Component
 public class PatternParser {
     public Pattern parsePatternString(
-            Random random,
             Map<String, String[]> placeholdersRaw,
             Map<String, String> models,
             String valueGenPattern,
@@ -33,7 +31,6 @@ public class PatternParser {
 
         while (index.get() < valueGenPattern.length()) {
             pattern.addElement(parseElement(
-                    random,
                     placeholders,
                     valueGenPattern,
                     index,
@@ -54,7 +51,6 @@ public class PatternParser {
     }
 
     private Pattern parsePatternSubstring(
-            Random random,
             Map<String, ElementsListChoice> placeholders,
             String substring,
             boolean plainByDefault
@@ -64,7 +60,6 @@ public class PatternParser {
 
         while (index.get() < substring.length()) {
             pattern.addElement(parseElement(
-                    random,
                     placeholders,
                     substring,
                     index,
@@ -77,7 +72,6 @@ public class PatternParser {
     }
 
     private PatternElement parseElement(
-            Random random,
             Map<String, ElementsListChoice> placeholders,
             String string,
             AtomicInteger index,
@@ -90,16 +84,16 @@ public class PatternParser {
 
         char ch = string.charAt(index.getAndIncrement());
         PatternElement element = switch (ch) {
-            case '\\' -> parseElement(random, placeholders, string, index, true, plainByDefault);
-            case '^' -> new UpperCaseModifier(parseElement(random, placeholders, string, index, false, plainByDefault));
-            case '_' -> new LowerCaseModifier(parseElement(random, placeholders, string, index, false, plainByDefault));
+            case '\\' -> parseElement(placeholders, string, index, true, plainByDefault);
+            case '^' -> new UpperCaseModifier(parseElement(placeholders, string, index, false, plainByDefault));
+            case '_' -> new LowerCaseModifier(parseElement(placeholders, string, index, false, plainByDefault));
             case 'E' -> new EnglishLetter();
             case 'R' -> new RussianLetter();
             case 'D' -> new NumberValueElement();
             case '(' -> {
                 String content = extractWrapperContent(string, index, "(", ")");
                 index.addAndGet(content.length() + 1);
-                yield parsePatternSubstring(random, placeholders, content, plainByDefault);
+                yield parsePatternSubstring(placeholders, content, plainByDefault);
             }
             case '%' -> {
                 String content = extractWrapperContent(string, index, "%", "%");
@@ -109,9 +103,9 @@ public class PatternParser {
                     throw new IllegalArgumentException("Unknown placeholder: %%%s%%".formatted(content));
                 }
 
-                yield placeholders.get(content).randomElement(random);
+                yield placeholders.get(content);
             }
-            case '[' -> parseElementsList(random, placeholders, string, index, plainByDefault);
+            case '[' -> parseElementsList(placeholders, string, index, plainByDefault);
             case '{' -> throw new IllegalArgumentException(
                     "'{' must be used with either a suitable pattern element or escape character");
             default -> new PlainTextElement(ch);
@@ -146,7 +140,6 @@ public class PatternParser {
     }
 
     private ElementsListChoice parseElementsList(
-            Random random,
             Map<String, ElementsListChoice> placeholders,
             String string,
             AtomicInteger index,
@@ -158,7 +151,6 @@ public class PatternParser {
         AtomicInteger subindex = new AtomicInteger(0);
         while (subindex.get() < content.length()) {
             elements.add(parseElement(
-                    random,
                     placeholders,
                     content,
                     subindex,

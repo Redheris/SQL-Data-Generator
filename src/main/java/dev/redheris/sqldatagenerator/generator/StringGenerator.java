@@ -3,11 +3,11 @@ package dev.redheris.sqldatagenerator.generator;
 import dev.redheris.sqldatagenerator.generator.syntax.PatternParser;
 import dev.redheris.sqldatagenerator.generator.syntax.pattern.Pattern;
 import dev.redheris.sqldatagenerator.request.model.GeneratorRequest;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Random;
 
-@Service
+@Component
 public class StringGenerator {
     private final PatternParser patternParser;
 
@@ -18,7 +18,6 @@ public class StringGenerator {
     public String generateByPattern(GeneratorRequest requestContext, String patternString, boolean plainValue) {
         Random random = new Random();
         Pattern pattern = patternParser.parsePatternString(
-                random,
                 requestContext.placeholdersMap(),
                 requestContext.valueModelsMap(),
                 patternString,
