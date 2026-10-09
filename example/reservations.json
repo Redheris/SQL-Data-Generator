@@ -1,0 +1,234 @@
+{
+	"db_auth": {
+		"url": "jdbc:postgresql://localhost:5432/postgres",
+		"username": "postgres",
+		"password": "root"
+	},
+	"placeholders": {
+		"first_name_male": [
+			"Аркадий",
+			"Александр",
+			"Алексей",
+			"Игорь",
+			"Олег",
+			"Магомед",
+			"Михаил",
+			"Максим",
+			"Ярослав",
+			"Валентин",
+			"Валерий",
+			"Виктор",
+			"Виталий",
+			"Глеб",
+			"Григорий",
+			"Дмитрий",
+			"Денис",
+			"Павел",
+			"Евгений"
+		],
+		"first_name_female": [
+			"Александра",
+			"Алина",
+			"Елена",
+			"Инна",
+			"Ирина",
+			"Елизавета",
+			"Марина",
+			"Екатерина",
+			"Евгения",
+			"Валентина",
+			"Вероника",
+			"Галина",
+			"Дарья",
+			"Клара",
+			"Ксения",
+			"Лариса",
+			"Любовь",
+			"Юлия",
+			"Светлана",
+			"Тамара"
+		],
+		"surname_male": [
+			"Клюков",
+			"Сергеев",
+			"Иванов",
+			"Петров",
+			"Волков",
+			"Волков",
+			"Лазарев",
+			"Медведев",
+			"Ершов",
+			"Никитин",
+			"Соболев",
+			"Рябов",
+			"Поляков",
+			"Цветков",
+			"Данилов",
+			"Жуков",
+			"Фролов",
+			"Журавлёв",
+			"Николаев",
+			"Крылов",
+			"Максимов",
+			"Сидоров",
+			"Осипов",
+			"Белоусов",
+			"Федотов",
+			"Дорофеев",
+			"Егоров",
+			"Матвеев",
+			"Бобров",
+			"Дмитриев"
+		],
+		"surname_female": [
+			"Клюкова",
+			"Сергеева",
+			"Иванова",
+			"Петрова",
+			"Волкова",
+			"Волкова",
+			"Лазарева",
+			"Медведева",
+			"Ершова",
+			"Никитина",
+			"Соболева",
+			"Рябова",
+			"Полякова",
+			"Цветкова",
+			"Данилова",
+			"Жукова",
+			"Фролова",
+			"Журавлёва",
+			"Николаева",
+			"Крылова",
+			"Максимова",
+			"Сидорова",
+			"Осипова",
+			"Белоусова",
+			"Федотова",
+			"Дорофеева",
+			"Егорова",
+			"Матвеева",
+			"Боброва",
+			"Дмитриева"
+		]
+	},
+	"models": {
+		"email": "[ED]{5,20}@_E{2,6}._E{2,6}",
+		"phone": "+D-DDD-DDD-DD-DD",
+		"full_name": "[(%first_name_male% %surname_male%)(%first_name_female% %surname_female%)]"
+	},
+	"tables": [
+		{
+			"name": "students",
+			"count": 128,
+			"generated_key_columns": [
+				"id"
+			],
+			"columns": [
+				{
+					"name": "age",
+					"type": "integer",
+					"min": 16,
+					"max": 40
+				},
+				{
+					"name": "grade",
+					"type": "double",
+					"min": 2,
+					"max": 5,
+					"precision": 2,
+					"null": 0.1
+				},
+				{
+					"name": "full_name",
+					"type": "varchar",
+					"value": "<full_name>"
+				},
+				{
+					"name": "coursework_id",
+					"null": 0.65,
+					"foreign_key": {
+						"table": "courseworks",
+						"column": "id"
+					}
+				},
+				{
+					"name": "reservation_id",
+					"null": 0.3,
+					"foreign_key": {
+						"table": "reservations",
+						"column": "id"
+					}
+				}
+			]
+		},
+		{
+			"name": "courseworks",
+			"count": 20,
+			"generated_key_columns": [
+				"id"
+			],
+			"columns": [
+				{
+					"name": "name",
+					"type": "varchar",
+					"value": "E{4,10}-DDD"
+				}
+			]
+		},
+		{
+			"name": "groups",
+			"count": 20,
+			"generated_key_columns": [
+				"id"
+			],
+			"columns": [
+				{
+					"name": "name",
+					"type": "varchar",
+					"value": "E{4,10}-DDD"
+				}
+			]
+		},
+		{
+			"name": "reservations",
+			"count": 20,
+			"generated_key_columns": [
+				"id"
+			],
+			"columns": [
+				{
+					"name": "user_id",
+					"type": "bigint",
+					"min": 11111,
+					"max": 99999
+				},
+				{
+					"name": "room_id",
+					"type": "bigint",
+					"min": 1,
+					"max": 625
+				},
+				{
+					"name": "end_date",
+					"type": "date",
+					"after": "10-10-2026",
+					"before": "31-12-2028"
+				},
+				{
+					"name": "start_date",
+					"type": "date",
+					"after": "09-10-2026",
+					"before": "30-12-2028"
+				},
+				{
+					"name": "status",
+					"type": "string",
+					"is_plain_value": true,
+					"value": "\\[\\(PENDING)\\(APPROVED)\\(CANCELED)]"
+				}
+			]
+		}
+	]
+}
