@@ -26,16 +26,10 @@ public class PatternParser {
         AtomicInteger index = new AtomicInteger(0);
         AtomicBoolean escape = new AtomicBoolean(false);
 
-        for (String modelName : models.keySet()) {
-            valueGenPattern = valueGenPattern.replace(
-                    "<%s>".formatted(modelName),
-                    models.get(modelName)
-            );
-        }
-
         while (index.get() < valueGenPattern.length()) {
             pattern.addElement(parseElement(
                     placeholders,
+                    models,
                     valueGenPattern,
                     index,
                     escape,
@@ -57,6 +51,7 @@ public class PatternParser {
 
     private Pattern parsePatternSubstring(
             Map<String, ElementsListChoice> placeholders,
+            Map<String, String> models,
             String substring,
             AtomicBoolean escape,
             boolean plainByDefault
@@ -68,6 +63,7 @@ public class PatternParser {
         while (index.get() < substring.length()) {
             pattern.addElement(parseElement(
                     placeholders,
+                    models,
                     substring,
                     index,
                     escape,
@@ -81,6 +77,7 @@ public class PatternParser {
 
     private PatternElement parseElement(
             Map<String, ElementsListChoice> placeholders,
+            Map<String, String> models,
             String string,
             AtomicInteger index,
             AtomicBoolean escape,
@@ -90,7 +87,7 @@ public class PatternParser {
         if (!escape.get() && string.charAt(index.get()) == '\\') {
             index.incrementAndGet();
             escape.set(true);
-            return parseElement(placeholders, string, index, escape, plainByDefault, concatPlainTextElements);
+            return parseElement(placeholders, models, string, index, escape, plainByDefault, concatPlainTextElements);
         }
 
         if (plainByDefault ^ escape.get()) {
@@ -102,13 +99,13 @@ public class PatternParser {
             case '^' -> {
                 escape.set(false);
                 yield new UpperCaseModifier(parseElement(
-                        placeholders, string, index, escape, plainByDefault, concatPlainTextElements
+                        placeholders, models, string, index, escape, plainByDefault, concatPlainTextElements
                 ));
             }
             case '_' -> {
                 escape.set(false);
                 yield new LowerCaseModifier(parseElement(
-                        placeholders, string, index, escape, plainByDefault, concatPlainTextElements
+                        placeholders, models, string, index, escape, plainByDefault, concatPlainTextElements
                 ));
             }
             case 'E' -> new EnglishLetter();
@@ -117,7 +114,23 @@ public class PatternParser {
             case '(' -> {
                 String content = extractWrapperContent(string, index, "(", ")");
                 index.addAndGet(content.length() + 1);
-                yield parsePatternSubstring(placeholders, content, escape, plainByDefault);
+                yield parsePatternSubstring(placeholders, models, content, escape, plainByDefault);
+            }
+            case '<' -> {
+                String content = extractWrapperContent(string, index, "<", ">");
+                index.addAndGet(content.length() + 1);
+
+                if (!models.containsKey(content)) {
+                    throw new IllegalArgumentException("Unknown model: <%s>".formatted(content));
+                }
+
+                yield parsePatternSubstring(
+                        placeholders,
+                        models,
+                        models.get(content),
+                        new AtomicBoolean(false),
+                        false
+                );
             }
             case '%' -> {
                 String content = extractWrapperContent(string, index, "%", "%");
@@ -129,7 +142,7 @@ public class PatternParser {
 
                 yield placeholders.get(content);
             }
-            case '[' -> parseElementsList(placeholders, string, index, escape, plainByDefault);
+            case '[' -> parseElementsList(placeholders, models, string, index, escape, plainByDefault);
             case '{' -> throw new IllegalArgumentException(
                     "'{' must be used with either a suitable pattern element or escape character");
             default -> {
@@ -207,6 +220,7 @@ public class PatternParser {
 
     private ElementsListChoice parseElementsList(
             Map<String, ElementsListChoice> placeholders,
+            Map<String, String> models,
             String string,
             AtomicInteger index,
             AtomicBoolean escape,
@@ -219,6 +233,7 @@ public class PatternParser {
         while (subindex.get() < content.length()) {
             elements.add(parseElement(
                     placeholders,
+                    models,
                     content,
                     subindex,
                     escape,
