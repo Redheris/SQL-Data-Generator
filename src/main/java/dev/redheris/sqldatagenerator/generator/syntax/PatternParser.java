@@ -94,20 +94,16 @@ public class PatternParser {
             return parsePlainText(string, index, escape, plainByDefault, concatPlainTextElements);
         }
 
+        escape.set(false);
+
         char ch = string.charAt(index.getAndIncrement());
         PatternElement element = switch (ch) {
-            case '^' -> {
-                escape.set(false);
-                yield new UpperCaseModifier(parseElement(
+            case '^' -> new UpperCaseModifier(parseElement(
                         placeholders, models, string, index, escape, plainByDefault, concatPlainTextElements
                 ));
-            }
-            case '_' -> {
-                escape.set(false);
-                yield new LowerCaseModifier(parseElement(
+            case '_' -> new LowerCaseModifier(parseElement(
                         placeholders, models, string, index, escape, plainByDefault, concatPlainTextElements
                 ));
-            }
             case 'E' -> new EnglishLetter();
             case 'R' -> new RussianLetter();
             case 'D' -> new NumberValueElement();
