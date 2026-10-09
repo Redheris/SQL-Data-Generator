@@ -75,7 +75,11 @@ public class DataGeneratorService {
             List<Object> keys = columnDataExtractor.selectColumn(fk.table(), fk.column());
 
             for (int i = 0; i < count; i++) {
-                data[i] = keys.get(random.nextInt(keys.size()));
+                if (columnConfig.nullOccurrence() > 0 && random.nextDouble() < columnConfig.nullOccurrence()) {
+                    data[i] = null;
+                } else {
+                    data[i] = keys.get(random.nextInt(keys.size()));
+                }
             }
         } else {
             switch (columnConfig.type()) {
