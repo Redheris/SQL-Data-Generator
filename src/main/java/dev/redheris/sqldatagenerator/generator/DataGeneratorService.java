@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
 import java.time.Period;
-import java.util.*;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -21,33 +21,13 @@ public class DataGeneratorService {
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
     private final StringGenerator stringGenerator;
     private final ColumnDataExtractor columnDataExtractor;
-    private final TablePrioritizer tablePrioritizer;
 
-    public DataGeneratorService(StringGenerator stringGenerator, ColumnDataExtractor columnDataExtractor, TablePrioritizer tablePrioritizer) {
+    public DataGeneratorService(StringGenerator stringGenerator, ColumnDataExtractor columnDataExtractor) {
         this.stringGenerator = stringGenerator;
         this.columnDataExtractor = columnDataExtractor;
-        this.tablePrioritizer = tablePrioritizer;
     }
 
-    public List<GeneratedTableData> generateDataByRequest(GeneratorRequest request) {
-        log.info("Generating data for {} tables...", request.tables().length);
-        long startTime = System.currentTimeMillis();
-
-        List<GeneratedTableData> generatedTables = new ArrayList<>();
-
-        List<TableConfig> prioritizedTables = tablePrioritizer.prioritizeTables(request.tables());
-
-        for (TableConfig table : prioritizedTables) {
-            generatedTables.add(generateTableData(request, table));
-        }
-
-        double time = (System.currentTimeMillis() - startTime) / 1000.0;
-        log.info("Completed generation data for {} in {} seconds", prioritizedTables.size(), time);
-
-        return generatedTables;
-    }
-
-    private GeneratedTableData generateTableData(GeneratorRequest request, TableConfig tableConfig) {
+    public GeneratedTableData generateTableData(GeneratorRequest request, TableConfig tableConfig) {
         log.info("Generating {} records for table \"{}\"...", tableConfig.count(), tableConfig.name());
         long startTime = System.currentTimeMillis();
 
