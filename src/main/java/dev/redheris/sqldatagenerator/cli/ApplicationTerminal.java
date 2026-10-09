@@ -45,10 +45,14 @@ public class ApplicationTerminal implements CommandLineRunner {
                     }
                     Path filepath = fileImporter.validateFilepath(filename);
                     generatorRequestExecutor.executeWithFile(scanner, filepath);
-                } catch (NoSuchFileException e) {
-                    System.out.println(e.getMessage());
-                } catch (RequestExecutionException e) {
-                    System.out.println(e.getMessage() + " " + e.getCause().getMessage());
+                } catch (NoSuchFileException | RequestExecutionException | IllegalArgumentException | IllegalStateException e) {
+                    System.out.println();
+                    if (e.getCause() == null) {
+                        System.out.println(e.getMessage());
+                    } else {
+                        System.out.println(e.getMessage() + " " + e.getCause().getMessage());
+                    }
+                    System.out.println();
                 } finally {
                     connectionService.disconnect();
                 }

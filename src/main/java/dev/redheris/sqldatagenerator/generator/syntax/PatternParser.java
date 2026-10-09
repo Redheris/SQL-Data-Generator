@@ -113,38 +113,57 @@ public class PatternParser {
             case 'D' -> new NumberValueElement();
             case '(' -> {
                 String content = extractWrapperContent(string, index, "(", ")");
-                index.addAndGet(content.length() + 1);
-                yield parsePatternSubstring(placeholders, models, content, escape, plainByDefault);
+                try {
+                    Pattern pattern = parsePatternSubstring(placeholders, models, content, escape, plainByDefault);
+                    index.addAndGet(content.length() + 1);
+                    yield pattern;
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException(
+                            "Exception during parsing pattern group: index %d: %s"
+                                    .formatted(index.get(), e.getMessage()),
+                            e
+                    );
+                }
             }
             case '<' -> {
                 String content = extractWrapperContent(string, index, "<", ">");
-                index.addAndGet(content.length() + 1);
 
                 if (!models.containsKey(content)) {
-                    throw new IllegalArgumentException("Unknown model: <%s>".formatted(content));
+                    throw new IllegalArgumentException("Unknown model: <%s>, index %d"
+                            .formatted(content, index.get()));
                 }
+                index.addAndGet(content.length() + 1);
 
-                yield parsePatternSubstring(
-                        placeholders,
-                        models,
-                        models.get(content),
-                        new AtomicBoolean(false),
-                        false
-                );
+                try {
+                    yield parsePatternSubstring(
+                            placeholders,
+                            models,
+                            models.get(content),
+                            new AtomicBoolean(false),
+                            false
+                    );
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException(
+                            "Exception during parsing model <%s>: %s".formatted(content, e.getMessage()),
+                            e
+                    );
+                }
             }
             case '%' -> {
                 String content = extractWrapperContent(string, index, "%", "%");
                 index.addAndGet(content.length() + 1);
 
                 if (!placeholders.containsKey(content)) {
-                    throw new IllegalArgumentException("Unknown placeholder: %%%s%%".formatted(content));
+                    throw new IllegalArgumentException("Unknown placeholder: %%%s%%, index %d"
+                            .formatted(content, index.get()));
                 }
 
                 yield placeholders.get(content);
             }
             case '[' -> parseElementsList(placeholders, models, string, index, escape, plainByDefault);
             case '{' -> throw new IllegalArgumentException(
-                    "'{' must be used with either a suitable pattern element or escape character");
+                    "'{' must be used with either a suitable pattern element or escape character: index %d"
+                            .formatted(index.get()));
             default -> {
                 index.decrementAndGet();
                 yield parsePlainText(string, index, escape, plainByDefault, concatPlainTextElements);
@@ -162,22 +181,24 @@ public class PatternParser {
                 String rangeString = extractWrapperContent(string, index, "{{", "}}");
 
                 if (element instanceof HasRange ranged) {
-                    Range range = parseRange(rangeString, false);
+                    Range range = parseRange(rangeString, false, index);
                     ranged.setRange(range.min, range.max);
                     index.addAndGet(rangeString.length() + 2);
                 } else {
-                    throw new IllegalStateException("Element doesn't support {{...}} modifier");
+                    throw new IllegalStateException("Element doesn't support {{...}} modifier: index %d"
+                            .formatted(index.get()));
                 }
             } else {
                 index.addAndGet(1);
                 String rangeString = extractWrapperContent(string, index, "{", "}");
 
                 if (element instanceof Stretchable stretchable) {
-                    Range range = parseRange(rangeString, true);
+                    Range range = parseRange(rangeString, true, index);
                     stretchable.setLength(range.min, range.max);
                     index.addAndGet(rangeString.length() + 1);
                 } else {
-                    throw new IllegalStateException("Element doesn't support {...} modifier");
+                    throw new IllegalStateException("Element doesn't support {...} modifier: index %d"
+                            .formatted(index.get()));
                 }
             }
         }
@@ -231,47 +252,63 @@ public class PatternParser {
         List<PatternElement> elements = new ArrayList<>();
         AtomicInteger subindex = new AtomicInteger(0);
         while (subindex.get() < content.length()) {
-            elements.add(parseElement(
-                    placeholders,
-                    models,
-                    content,
-                    subindex,
-                    escape,
-                    plainByDefault,
-                    false
-            ));
+            try {
+                elements.add(parseElement(
+                        placeholders,
+                        models,
+                        content,
+                        subindex,
+                        escape,
+                        plainByDefault,
+                        false
+                ));
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException(
+                        "Exception during parsing elements list: index %d: %s"
+                                .formatted(index.get(), e.getMessage()),
+                        e
+                );
+            }
         }
 
         index.addAndGet(content.length() + 1);
         return new ElementsListChoice(elements.toArray(new PatternElement[0]));
     }
 
-    private Range parseRange(String substring, boolean allowSingleValue) {
+    private Range parseRange(String substring, boolean allowSingleValue, AtomicInteger index) {
         String[] parts = substring.split(",");
-        if (parts.length == 2) {
-            return new Range(
-                    Integer.parseInt(parts[0]),
-                    Integer.parseInt(parts[1])
+        try {
+            if (parts.length == 2) {
+                return new Range(
+                        Integer.parseInt(parts[0]),
+                        Integer.parseInt(parts[1])
+                );
+            }
+            if (allowSingleValue && parts.length == 1) {
+                int value = Integer.parseInt(parts[0]);
+                return new Range(value, value);
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Invalid integer number format: index %d: %s".formatted(index.get(), e.getMessage())
             );
         }
-        if (allowSingleValue && parts.length == 1) {
-            int value = Integer.parseInt(parts[0]);
-            return new Range(value, value);
-        }
         if (allowSingleValue) {
-            throw new IllegalArgumentException("Range must have exactly 1 or 2 arguments");
+            throw new IllegalArgumentException("Range must have exactly 1 or 2 arguments: index %d"
+                    .formatted(index.get()));
         }
-        throw new IllegalArgumentException("Range must have exactly 2 arguments");
+        throw new IllegalArgumentException("Range must have exactly 2 arguments: index %d"
+                .formatted(index.get()));
     }
 
     private String extractWrapperContent(String string, AtomicInteger index, String opening, String ending) {
         int endIndex = string.indexOf(ending, index.get());
         if (endIndex == -1) {
-            throw new IllegalArgumentException("Unclosed '%s...%s' structure".formatted(opening, ending));
+            throw new IllegalArgumentException("Unclosed '%s...%s' structure: index %d"
+                    .formatted(opening, ending, index.get()));
         }
         return string.substring(index.get(), endIndex);
     }
-
 
     private record Range(int min, int max) {}
 }
